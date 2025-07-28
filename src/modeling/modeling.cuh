@@ -59,7 +59,6 @@ private:
 protected:
 
     float dx, dz, dt;
-
     int nxx, nzz, matsize;
     int nt, nx, nz, nb, nPoints;
     int tlag, recId, sIdx, sIdz;
@@ -116,7 +115,6 @@ protected:
     virtual void compute_eikonal() = 0;
     virtual void compute_velocity() = 0;
     virtual void compute_pressure() = 0;
-
     virtual void set_specifications() = 0;
 
     void expand_boundary(float * input, float * output);

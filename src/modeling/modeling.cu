@@ -55,53 +55,6 @@ void Modeling::set_parameters()
     cudaMalloc((void**)&(d_Txz), matsize*sizeof(float));
 }
 
-void Modeling::set_geometry()
-{
-    geometry = new Geometry();
-    geometry->parameters = parameters;
-    geometry->set_parameters();
-
-    max_spread = 0;
-    for (int index = 0; index < geometry->nrel; index++)
-    {   
-        if (max_spread < geometry->spread[index])
-            max_spread = geometry->spread[index]; 
-    }
-
-    cudaMalloc((void**)&(d_rIdx), max_spread*sizeof(int));
-    cudaMalloc((void**)&(d_rIdz), max_spread*sizeof(int));
-}
-
-void Modeling::set_snapshots()
-{
-    if (snapshot)
-    {
-        if (nsnap == 1) 
-            snapId.push_back(isnap);
-        else 
-        {
-            for (int i = 0; i < nsnap; i++) 
-                snapId.push_back(isnap + i * (fsnap - isnap) / (nsnap - 1));
-        }
-        
-        snapshot_in = new float[matsize]();
-        snapshot_out = new float[nPoints]();
-    }
-}
-
-void Modeling::set_seismogram()
-{
-    sBlocks = (int)((max_spread + NTHREADS - 1) / NTHREADS); 
-
-    h_seismogram_Ps = new float[nt*max_spread]();
-    h_seismogram_Vx = new float[nt*max_spread]();
-    h_seismogram_Vz = new float[nt*max_spread]();
-
-    cudaMalloc((void**)&(d_seismogram_Ps), nt*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_seismogram_Vx), nt*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_seismogram_Vz), nt*max_spread*sizeof(float));
-}
-
 void Modeling::set_wavelet()
 {
     float * signal_aux1 = new float[nt]();
@@ -240,6 +193,59 @@ void Modeling::set_eikonal()
 
     delete[] h_sgnt;
     delete[] h_sgnv;
+}
+
+void Modeling::set_geometry()
+{
+    geometry = new Geometry();
+    geometry->parameters = parameters;
+    geometry->set_parameters();
+
+    max_spread = 0;
+    for (int index = 0; index < geometry->nrel; index++)
+    {   
+        if (max_spread < geometry->spread[index])
+            max_spread = geometry->spread[index]; 
+    }
+
+    cudaMalloc((void**)&(d_rIdx), max_spread*sizeof(int));
+    cudaMalloc((void**)&(d_rIdz), max_spread*sizeof(int));
+
+    cudaMalloc((void**)&(d_skw), DGS*DGS*sizeof(float));
+    
+    cudaMalloc((void**)&(d_rkwPs), DGS*DGS*max_spread*sizeof(float));
+    cudaMalloc((void**)&(d_rkwVx), DGS*DGS*max_spread*sizeof(float));
+    cudaMalloc((void**)&(d_rkwVz), DGS*DGS*max_spread*sizeof(float));
+}
+
+void Modeling::set_snapshots()
+{
+    if (snapshot)
+    {
+        if (nsnap == 1) 
+            snapId.push_back(isnap);
+        else 
+        {
+            for (int i = 0; i < nsnap; i++) 
+                snapId.push_back(isnap + i * (fsnap - isnap) / (nsnap - 1));
+        }
+        
+        snapshot_in = new float[matsize]();
+        snapshot_out = new float[nPoints]();
+    }
+}
+
+void Modeling::set_seismogram()
+{
+    sBlocks = (int)((max_spread + NTHREADS - 1) / NTHREADS); 
+
+    h_seismogram_Ps = new float[nt*max_spread]();
+    h_seismogram_Vx = new float[nt*max_spread]();
+    h_seismogram_Vz = new float[nt*max_spread]();
+
+    cudaMalloc((void**)&(d_seismogram_Ps), nt*max_spread*sizeof(float));
+    cudaMalloc((void**)&(d_seismogram_Vx), nt*max_spread*sizeof(float));
+    cudaMalloc((void**)&(d_seismogram_Vz), nt*max_spread*sizeof(float));
 }
 
 void Modeling::time_propagation()
@@ -446,7 +452,7 @@ void Modeling::compression(float * input, uintc * output, int N, float &max_valu
 
     # pragma omp parallel for
     for (int index = 0; index < N; index++)
-        output[index] = static_cast<uintc>(1.0f + (COMPRESS - 1)*(input[index] - min_value) / (max_value - min_value));
+        output[index] = static_cast<uintc>(1.0f + (float)(COMPRESS - 1)*(input[index] - min_value) / (max_value - min_value));
 }
 
 __global__ void time_set(float * T, int matsize)

@@ -5,12 +5,6 @@ void Elastic_ISO::set_specifications()
     modeling_type = "elastic_iso";
     modeling_name = "Modeling type: Elastic isotropic solver";
 
-    cudaMalloc((void**)&(d_skw), DGS*DGS*sizeof(float));
-    
-    cudaMalloc((void**)&(d_rkwPs), DGS*DGS*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_rkwVx), DGS*DGS*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_rkwVz), DGS*DGS*max_spread*sizeof(float));
-
     auto * Cij = new float[nPoints]();
 
     std::string vp_file = catch_parameter("vp_model_file", parameters);
@@ -100,7 +94,7 @@ void Elastic_ISO::initialization()
         float rx = geometry->xrec[recId];
         float rz = geometry->zrec[recId];
         
-        int rIdx = (int)((rx + 0.5f*dz) / dx);
+        int rIdx = (int)((rx + 0.5f*dx) / dx);
         int rIdz = (int)((rz + 0.5f*dz) / dz);
     
         auto rkwPs = kaiser_weights(rx, rz, rIdx, rIdz, dx, dz, beta);
@@ -241,7 +235,7 @@ __global__ void compute_velocity_ssg(float * Vx, float * Vz, float * Txx, float 
     }
 }
 
-__global__ void compute_pressure_ssg(float * Vx, float * Vz, float * Txx, float * Tzz, float * Txz, float * P, float * T, uintc * C44, uintc * C13, float maxC55, 
+__global__ void compute_pressure_ssg(float * Vx, float * Vz, float * Txx, float * Tzz, float * Txz, float * P, float * T, uintc * C55, uintc * C13, float maxC55, 
                                      float minC55, float maxC13, float minC13, int tId, int tlag, float dx, float dz, float dt, int nxx, int nzz)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -249,7 +243,7 @@ __global__ void compute_pressure_ssg(float * Vx, float * Vz, float * Txx, float 
     int i = (int)(index % nzz);
     int j = (int)(index / nzz);
 
-    float c44_1, c44_2, c44_3, c44_4;
+    float c55_1, c55_2, c55_3, c55_4;
 
     if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nzz))
     {
@@ -266,10 +260,10 @@ __global__ void compute_pressure_ssg(float * Vx, float * Vz, float * Txx, float 
                             FDM4*(Vz[(i+1) + j*nzz] - Vz[i + j*nzz])) / dz;
             
             float c13 = (minC13 + (static_cast<float>(C13[index]) - 1.0f) * (maxC13 - minC13) / (COMPRESS - 1));
-            float c44 = (minC55 + (static_cast<float>(C44[index]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
+            float c55 = (minC55 + (static_cast<float>(C55[index]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
 
-            Txx[index] += dt*((c13 + 2*c44)*dVx_dx + c13*dVz_dz);
-            Tzz[index] += dt*((c13 + 2*c44)*dVz_dz + c13*dVx_dx);                    
+            Txx[index] += dt*((c13 + 2*c55)*dVx_dx + c13*dVz_dz);
+            Tzz[index] += dt*((c13 + 2*c55)*dVz_dz + c13*dVx_dx);                    
         }
 
         if((i > 3) && (i < nzz-3) && (j > 3) && (j < nxx-3)) 
@@ -284,12 +278,12 @@ __global__ void compute_pressure_ssg(float * Vx, float * Vz, float * Txx, float 
                             FDM3*(Vz[i + (j-2)*nzz] - Vz[i + (j+1)*nzz]) +
                             FDM4*(Vz[i + j*nzz]     - Vz[i + (j-1)*nzz])) / dx;
 
-            c44_1 = (minC55 + (static_cast<float>(C44[(i+1) + (j+1)*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
-            c44_2 = (minC55 + (static_cast<float>(C44[i + (j+1)*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
-            c44_3 = (minC55 + (static_cast<float>(C44[(i+1) + j*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
-            c44_4 = (minC55 + (static_cast<float>(C44[i + j*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
+            c55_1 = (minC55 + (static_cast<float>(C55[(i+1) + (j+1)*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
+            c55_2 = (minC55 + (static_cast<float>(C55[i + (j+1)*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
+            c55_3 = (minC55 + (static_cast<float>(C55[(i+1) + j*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
+            c55_4 = (minC55 + (static_cast<float>(C55[i + j*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
 
-            float Mxz = powf(0.25f*(1.0f/c44_1 + 1.0f/c44_2 + 1.0f/c44_3 + 1.0f/c44_4),-1.0f);
+            float Mxz = powf(0.25f*(1.0f/c55_1 + 1.0f/c55_2 + 1.0f/c55_3 + 1.0f/c55_4),-1.0f);
 
             Txz[index] += dt*Mxz*(dVx_dz + dVz_dx);
         }

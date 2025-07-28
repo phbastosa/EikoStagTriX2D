@@ -175,24 +175,16 @@ std::vector<std::vector<float>> gaussian_weights(float x, float z, int ix0, int 
 
     std::vector<std::vector<float>> weights(N, std::vector<float>(N));
 
-    float rmax = 2.0f*sqrtf(dx*dx + dz*dz);
-
     for (int i = 0; i < N; i++)
     {
-        float zi = (iz0 + i - 2) * dz;
-
         for (int j = 0; j < N; j++)
         {
-            float xj = (ix0 + j - 2) * dx;
+            float x = (float)(j - 2);
+            float z = (float)(i - 2);
 
-            float rz = z - zi;
-            float rx = x - xj;
+            float r = sqrtf(x*x + z*z);
 
-            float r = sqrtf(rx * rx + rz * rz) / rmax;
-
-            float wij = 1.0f/sqrtf(2.0f*M_PI)*expf(-0.5f*r*r);
-
-            weights[i][j] = wij;
+            weights[i][j] = 1.0f/sqrtf(2.0f*M_PI)*expf(-0.5f*r*r);
 
             sum += weights[i][j];
         }

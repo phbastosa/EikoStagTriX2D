@@ -5,12 +5,6 @@ void Elastic_ANI::set_specifications()
     modeling_type = "elastic_ani";
     modeling_name = "Modeling type: Elastic anisotropic solver";
 
-    cudaMalloc((void**)&(d_skw), DGS*DGS*sizeof(float));
-    
-    cudaMalloc((void**)&(d_rkwPs), DGS*DGS*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_rkwVx), DGS*DGS*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_rkwVz), DGS*DGS*max_spread*sizeof(float));
-
     auto * Cij = new float[nPoints]();
 
     std::string vp_file = catch_parameter("vp_model_file", parameters);
