@@ -277,12 +277,12 @@ void Modeling::set_wavefields()
 {
     cudaMemset(d_P, 0.0f, matsize*sizeof(float));
     
-	cudaMemset(d_Vx, 0.0f, matsize*sizeof(float));
+    cudaMemset(d_Vx, 0.0f, matsize*sizeof(float));
     cudaMemset(d_Vz, 0.0f, matsize*sizeof(float));
     
-	cudaMemset(d_Txx, 0.0f, matsize*sizeof(float));
+    cudaMemset(d_Txx, 0.0f, matsize*sizeof(float));
     cudaMemset(d_Tzz, 0.0f, matsize*sizeof(float));
-	cudaMemset(d_Txz, 0.0f, matsize*sizeof(float));
+    cudaMemset(d_Txz, 0.0f, matsize*sizeof(float));
 }
 
 void Modeling::eikonal_solver()
