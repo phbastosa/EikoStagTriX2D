@@ -119,10 +119,11 @@ float bessel_i0(float x)
     return sum;
 }
 
-std::vector<std::vector<float>> kaiser_weights(float x, float z, int ix0, int iz0, float dx, float dz, float beta) 
+std::vector<std::vector<float>> kaiser_weights(float x, float z, int ix0, int iz0, float dx, float dz) 
 {
-    const int N = 5;
+    const int N = 8;
     float sum = 0.0f;
+    float beta = 6.31f;
 
     std::vector<std::vector<float>> weights(N, std::vector<float>(N));
 
@@ -131,12 +132,12 @@ std::vector<std::vector<float>> kaiser_weights(float x, float z, int ix0, int iz
 
     for (int i = 0; i < N; ++i) 
     {    
-        float zi = (iz0 + i - 2) * dz;
+        float zi = (iz0 + i - 3) * dz;
         float dzr = (z - zi) / dz;
         
         for (int j = 0; j < N; ++j) 
         {
-            float xj = (ix0 + j - 2) * dx;
+            float xj = (ix0 + j - 3) * dx;
             float dxr = (x - xj) / dx;
 
             float rz = z - zi;
@@ -170,7 +171,7 @@ std::vector<std::vector<float>> kaiser_weights(float x, float z, int ix0, int iz
 
 std::vector<std::vector<float>> gaussian_weights(float x, float z, int ix0, int iz0, float dx, float dz) 
 {
-    const int N = 5;
+    const int N = 8;
     float sum = 0.0f;
 
     std::vector<std::vector<float>> weights(N, std::vector<float>(N));
@@ -179,8 +180,8 @@ std::vector<std::vector<float>> gaussian_weights(float x, float z, int ix0, int 
     {
         for (int j = 0; j < N; j++)
         {
-            float x = (float)(j - 2);
-            float z = (float)(i - 2);
+            float x = (float)(j - 3);
+            float z = (float)(i - 3);
 
             float r = sqrtf(x*x + z*z);
 

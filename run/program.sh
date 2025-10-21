@@ -7,14 +7,14 @@ geometry="../src/geometry/geometry.cpp"
 
 folder="../src/modeling"
 
-modeling="$folder/modeling.cu"
+modeling="$folder/triclinic.cu"
 
-elastic_iso="$folder/elastic_iso.cu"
-elastic_ani="$folder/elastic_ani.cu"
+triclinic_ssg="$folder/triclinic_ssg.cu"
+triclinic_rsg="$folder/triclinic_rsg.cu"
 
 modeling_main="../src/modeling_main.cpp"
 
-modeling_all="$modeling $elastic_iso $elastic_ani"
+modeling_all="$modeling $triclinic_ssg $triclinic_rsg"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
@@ -24,15 +24,19 @@ flags="-Xcompiler -fopenmp --std=c++11 --use_fast_math --relocatable-device-code
 
 USER_MESSAGE="
 -------------------------------------------------------------------------------
-                                 \033[34mWASMEM2D\033[0;0m
+ \033[34mEikoStagTriX2D\033[0;0m ----------------------------------------------
 -------------------------------------------------------------------------------
-\nUsage:\n
-    $ $0 -compile              
-    $ $0 -modeling                      
+\nUsage:
+    
+    $ $0 -compile                  # To build ../bin/modeling.exe     
+    $ $0 -modeling                 # To execute the program             
 
 Tests:
 
-    $ $0 -test_modeling                      
+    $ $0 -test_compression         # Stiffness compression to check memory usage
+    $ $0 -test_performance         # Eikonal clipping test to check performance
+    $ $0 -test_isotropic_media     # Comparison test in isotropic homogeneous media
+    $ $0 -test_anisotropic_media   # Comparison test in anisotropic homogeneous media             
     
 -------------------------------------------------------------------------------
 "
@@ -76,6 +80,21 @@ case "$1" in
     ./../bin/modeling.exe parameters.txt
 	
     exit 0
+;;
+
+-test_compression)
+
+
+
+
+
+;;
+
+-test_performance)
+
+
+
+
 ;;
 
 -test_homogeneous)

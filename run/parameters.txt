@@ -2,44 +2,47 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 1001                           # <int>  
-z_samples = 301                            # <int>  
+x_samples = 501                            # <int>  
+z_samples = 501                            # <int>  
 
 x_spacing = 10.0                           # [m] <float> 
 z_spacing = 10.0                           # [m] <float> 
 
-vp_model_file = ../inputs/models/precision_test_vp.bin
-ro_model_file = ../inputs/models/precision_test_ro.bin
+slowness_model_file = ../inputs/models/EikoStagTriX2D_slowness.bin
+buoyancy_model_file = ../inputs/models/EikoStagTriX2D_buoyancy.bin
 
-Cijkl_folder = ../inputs/models/precision_test_
+Cijkl_folder = ../inputs/models/EikoStagTriX2D_
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../inputs/geometry/precision_test_SPS.txt              
-RPS = ../inputs/geometry/precision_test_RPS.txt     
-XPS = ../inputs/geometry/precision_test_XPS.txt     
+SPS = ../inputs/geometry/EikoStagTriX2D_SPS.txt              
+RPS = ../inputs/geometry/EikoStagTriX2D_RPS.txt     
+XPS = ../inputs/geometry/EikoStagTriX2D_XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-# [0] - Elastic ISO
-# [1] - Elastic ANI
+# [0] - Triclinic SSG
+# [1] - Triclinic RSG
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 1
+modeling_type = 0
 
-time_samples = 4001
+compression = false
+eikonalClip = false
+
+time_samples = 1001
 time_spacing = 1e-3
 max_frequency = 30.0
 
-boundary_samples = 1000
-boundary_damping = 0.0
+boundary_samples = 100
+boundary_damping = 0.0015
 
 snapshot = true
-beg_snap = 1000
-end_snap = 1000
+beg_snap = 500
+end_snap = 500
 num_snap = 1
 
 snapshot_folder = ../outputs/snapshots/
