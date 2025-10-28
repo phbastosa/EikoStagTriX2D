@@ -49,7 +49,7 @@ void Triclinic::set_parameters()
 
 void Triclinic::set_models()
 {
-    std::string buoyancy_file = catch_parameter("buoyancy_model_file", parameters);
+    std::string buoyancy_file = catch_parameter("buoyancy_file", parameters);
     std::string Cijkl_folder = catch_parameter("Cijkl_folder", parameters);
 
     set_slowness();
@@ -147,7 +147,7 @@ void Triclinic::set_models()
 
 void Triclinic::set_slowness()
 {
-    std::string slowness_file = catch_parameter("slowness_model_file", parameters);
+    std::string slowness_file = catch_parameter("slowness_file", parameters);
 
     h_S = new float[matsize]();
 

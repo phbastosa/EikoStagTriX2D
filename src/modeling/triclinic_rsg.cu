@@ -130,9 +130,9 @@ __global__ void uintc_compute_velocity_rsg(float * Vx, float * Vz, float * Txx, 
  
     float FDM[] = {FDM4, -FDM3, FDM2, -FDM1};
     
-    T[index] = (eikonal) ? T[index] : 1e6f;
+    T[index] = (eikonal) ? T[index] : 0.0f;
 
-    if (((float)(tId + tlag)*dt < T[index]))
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nzz))
     {                
         if((i >= 3) && (i < nzz-4) && (j >= 3) && (j < nxx-4)) 
         {   
@@ -206,9 +206,9 @@ __global__ void float_compute_velocity_rsg(float * Vx, float * Vz, float * Txx, 
  
     float FDM[] = {FDM4, -FDM3, FDM2, -FDM1};
     
-    T[index] = (eikonal) ? T[index] : 1e6f;
+    T[index] = (eikonal) ? T[index] : 0.0f;
 
-    if (((float)(tId + tlag)*dt < T[index]))
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nzz))
     {                
         if((i >= 3) && (i < nzz-4) && (j >= 3) && (j < nxx-4)) 
         {   
@@ -267,10 +267,10 @@ __global__ void uintc_compute_pressure_rsg(float * Vx, float * Vz, float * Txx, 
     float d1_Vz = 0.0f; float d2_Vz = 0.0f;
 
     float FDM[] = {FDM4, -FDM3, FDM2, -FDM1};
+    
+    T[index] = (eikonal) ? T[index] : 0.0f;
 
-    T[index] = (eikonal) ? T[index] : 1e6f;
-
-    if (((float)(tId + tlag)*dt < T[index]))
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nzz))
     {                
         if((i > 3) && (i < nzz-3) && (j > 3) && (j < nxx-3)) 
         {
@@ -319,10 +319,10 @@ __global__ void float_compute_pressure_rsg(float * Vx, float * Vz, float * Txx, 
     float d1_Vz = 0.0f; float d2_Vz = 0.0f;
 
     float FDM[] = {FDM4, -FDM3, FDM2, -FDM1};
+    
+    T[index] = (eikonal) ? T[index] : 0.0f;
 
-    T[index] = (eikonal) ? T[index] : 1e6f;
-
-    if (((float)(tId + tlag)*dt < T[index]))
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nzz))
     {                
         if((i > 3) && (i < nzz-3) && (j > 3) && (j < nxx-3)) 
         {

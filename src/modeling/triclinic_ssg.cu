@@ -124,10 +124,10 @@ __global__ void uintc_compute_velocity_ssg(float * Vx, float * Vz, float * Txx, 
             }
         }
     }
+    
+    T[index] = (eikonal) ? T[index] : 0.0f;
 
-    T[index] = (eikonal) ? T[index] : 1e6f;
-
-    if (((float)(tId + tlag)*dt < T[index]))
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nzz))
     {
         Bn = (minB + (static_cast<float>(B[index]) - 1.0f) * (maxB - minB) / (COMPRESS - 1));
 
@@ -203,10 +203,10 @@ __global__ void float_compute_velocity_ssg(float * Vx, float * Vz, float * Txx, 
             }
         }
     }
+    
+    T[index] = (eikonal) ? T[index] : 0.0f;
 
-    T[index] = (eikonal) ? T[index] : 1e6f;
-
-    if (((float)(tId + tlag)*dt < T[index]))
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nzz))
     {                
         if((i >= 3) && (i < nzz-4) && (j >= 3) && (j < nxx-4))
         {
@@ -267,10 +267,10 @@ __global__ void uintc_compute_pressure_ssg(float * Vx, float * Vz, float * Txx, 
     float c15_1, c15_2, c15_3, c15_4;
     float c35_1, c35_2, c35_3, c35_4;
     float c55_1, c55_2, c55_3, c55_4;
+    
+    T[index] = (eikonal) ? T[index] : 0.0f;
 
-    T[index] = (eikonal) ? T[index] : 1e6f;
-
-    if (((float)(tId + tlag)*dt < T[index]))
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nzz))
     {                
         if((i >= 3) && (i < nzz-4) && (j >= 3) && (j < nxx-4))
         {
@@ -360,10 +360,10 @@ __global__ void float_compute_pressure_ssg(float * Vx, float * Vz, float * Txx, 
 
     int i = (int)(index % nzz);
     int j = (int)(index / nzz);
+    
+    T[index] = (eikonal) ? T[index] : 0.0f;
 
-    T[index] = (eikonal) ? T[index] : 1e6f;
-
-    if (((float)(tId + tlag)*dt < T[index]))
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nzz))
     {                
         if((i >= 3) && (i < nzz-4) && (j >= 3) && (j < nxx-4))
         {
