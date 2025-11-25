@@ -2,11 +2,11 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 301                           # <int>  
-z_samples = 51                            # <int>  
+x_samples = 401                           # <int>  
+z_samples = 81                            # <int>  
 
-x_spacing = 10.0                          # [m] <float> 
-z_spacing = 10.0                          # [m] <float> 
+x_spacing = 12.5                          # [m] <float> 
+z_spacing = 12.5                          # [m] <float> 
 
 slowness_file = ../inputs/models/EikoStagTriX2D_slowness.bin
 buoyancy_file = ../inputs/models/EikoStagTriX2D_buoyancy.bin
@@ -28,19 +28,19 @@ XPS = ../inputs/geometry/EikoStagTriX2D_XPS.txt
 # [1] - Triclinic RSG
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 1
+modeling_type = 0
 
 compression = true
 eikonalClip = true
 
-time_samples = 3001
+time_samples = 2001
 time_spacing = 1e-3
 max_frequency = 30.0
 
-boundary_samples = 50
-boundary_damping = 0.0045
+boundary_samples = 100
+boundary_damping = 0.0015
 
-snapshot = true
+snapshot = false
 beg_snap = 500
 end_snap = 1000
 num_snap = 2

@@ -47,117 +47,67 @@ void Triclinic::set_parameters()
     set_wavefields();
 }
 
-void Triclinic::set_models()
-{
-    std::string buoyancy_file = catch_parameter("buoyancy_file", parameters);
-    std::string Cijkl_folder = catch_parameter("Cijkl_folder", parameters);
-
-    set_slowness();
-
+void Triclinic::set_uintc_element(std::string element_path, uintc *&dCij, float &max, float &min)
+{   
     auto * iModel = new float[nPoints]();
     auto * xModel = new float[matsize]();
     auto * uModel = new uintc[matsize]();
     
-    if (compression)
-    {
-        import_binary_float(buoyancy_file, iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        get_compression(xModel, uModel, matsize, maxB, minB);        
-        cudaMalloc((void**)&(dc_B), matsize*sizeof(uintc));
-        cudaMemcpy(dc_B, uModel, matsize*sizeof(uintc), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C11.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        get_compression(xModel, uModel, matsize, maxC11, minC11);        
-        cudaMalloc((void**)&(dc_C11), matsize*sizeof(uintc));
-        cudaMemcpy(dc_C11, uModel, matsize*sizeof(uintc), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C13.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        get_compression(xModel, uModel, matsize, maxC13, minC13);        
-        cudaMalloc((void**)&(dc_C13), matsize*sizeof(uintc));
-        cudaMemcpy(dc_C13, uModel, matsize*sizeof(uintc), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C15.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        get_compression(xModel, uModel, matsize, maxC15, minC15);        
-        cudaMalloc((void**)&(dc_C15), matsize*sizeof(uintc));
-        cudaMemcpy(dc_C15, uModel, matsize*sizeof(uintc), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C33.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        get_compression(xModel, uModel, matsize, maxC33, minC33);        
-        cudaMalloc((void**)&(dc_C33), matsize*sizeof(uintc));
-        cudaMemcpy(dc_C33, uModel, matsize*sizeof(uintc), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C35.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        get_compression(xModel, uModel, matsize, maxC35, minC35);        
-        cudaMalloc((void**)&(dc_C35), matsize*sizeof(uintc));
-        cudaMemcpy(dc_C35, uModel, matsize*sizeof(uintc), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C55.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        get_compression(xModel, uModel, matsize, maxC55, minC55);        
-        cudaMalloc((void**)&(dc_C55), matsize*sizeof(uintc));
-        cudaMemcpy(dc_C55, uModel, matsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    }
-    else 
-    {
-        import_binary_float(buoyancy_file, iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        cudaMalloc((void**)&(d_B), matsize*sizeof(float));
-        cudaMemcpy(d_B, xModel, matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C11.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        cudaMalloc((void**)&(d_C11), matsize*sizeof(float));
-        cudaMemcpy(d_C11, xModel, matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C13.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        cudaMalloc((void**)&(d_C13), matsize*sizeof(float));
-        cudaMemcpy(d_C13, xModel, matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C15.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        cudaMalloc((void**)&(d_C15), matsize*sizeof(float));
-        cudaMemcpy(d_C15, xModel, matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C33.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        cudaMalloc((void**)&(d_C33), matsize*sizeof(float));
-        cudaMemcpy(d_C33, xModel, matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C35.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        cudaMalloc((void**)&(d_C35), matsize*sizeof(float));
-        cudaMemcpy(d_C35, xModel, matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-        import_binary_float(Cijkl_folder + "C55.bin", iModel, nPoints);
-        expand_boundary(iModel, xModel);
-        cudaMalloc((void**)&(d_C55), matsize*sizeof(float));
-        cudaMemcpy(d_C55, xModel, matsize*sizeof(float), cudaMemcpyHostToDevice);
-    }
+    import_binary_float(element_path, iModel, nPoints);
+    expand_boundary(iModel, xModel);
+    get_compression(xModel, uModel, matsize, max, min);        
+    cudaMalloc((void**)&(dCij), matsize*sizeof(uintc));
+    cudaMemcpy(dCij, uModel, matsize*sizeof(uintc), cudaMemcpyHostToDevice);
 
     delete[] iModel;   
     delete[] xModel;
-    delete[] uModel;
+    delete[] uModel;    
 }
 
-void Triclinic::set_slowness()
+void Triclinic::set_float_element(std::string element_path, float *&dCij)
+{   
+    auto * iModel = new float[nPoints]();
+    auto * xModel = new float[matsize]();
+    
+    import_binary_float(element_path, iModel, nPoints);
+    expand_boundary(iModel, xModel);
+    cudaMalloc((void**)&(dCij), matsize*sizeof(float));
+    cudaMemcpy(dCij, xModel, matsize*sizeof(float), cudaMemcpyHostToDevice);
+
+    delete[] iModel;   
+    delete[] xModel;    
+}
+
+void Triclinic::set_models()
 {
     std::string slowness_file = catch_parameter("slowness_file", parameters);
+    std::string buoyancy_file = catch_parameter("buoyancy_file", parameters);
+    std::string Cijkl_folder = catch_parameter("Cijkl_folder", parameters);
+    
+    set_float_element(slowness_file, d_S);
 
-    h_S = new float[matsize]();
+    if (compression)
+    {
+        set_uintc_element(buoyancy_file, dc_B, maxB, minB);
 
-    float * s = new float[nPoints]();
-    import_binary_float(slowness_file, s, nPoints);
-    expand_boundary(s, h_S);
-    cudaMalloc((void**)&(d_S), matsize*sizeof(float));
-    cudaMemcpy(d_S, h_S, matsize*sizeof(float), cudaMemcpyHostToDevice);
+        set_uintc_element(Cijkl_folder + "C11.bin", dc_C11, maxC11, minC11);
+        set_uintc_element(Cijkl_folder + "C13.bin", dc_C13, maxC13, minC13);
+        set_uintc_element(Cijkl_folder + "C15.bin", dc_C15, maxC15, minC15);
+        set_uintc_element(Cijkl_folder + "C33.bin", dc_C33, maxC33, minC33);
+        set_uintc_element(Cijkl_folder + "C35.bin", dc_C35, maxC35, minC35);
+        set_uintc_element(Cijkl_folder + "C55.bin", dc_C55, maxC55, minC55);
+    }
+    else 
+    {
+        set_float_element(buoyancy_file, d_B);
 
-    delete[] s;
+        set_float_element(Cijkl_folder + "C11.bin", d_C11);
+        set_float_element(Cijkl_folder + "C13.bin", d_C13);
+        set_float_element(Cijkl_folder + "C15.bin", d_C15);
+        set_float_element(Cijkl_folder + "C33.bin", d_C33);
+        set_float_element(Cijkl_folder + "C35.bin", d_C35);
+        set_float_element(Cijkl_folder + "C55.bin", d_C55);
+    }
 }
 
 void Triclinic::expand_boundary(float * input, float * output)
@@ -362,21 +312,14 @@ void Triclinic::set_geometry()
     geometry->parameters = parameters;
     geometry->set_parameters();
 
-    max_spread = 0;
-    for (int index = 0; index < geometry->nrel; index++)
-    {   
-        if (max_spread < geometry->spread[index])
-            max_spread = geometry->spread[index]; 
-    }
-
-    cudaMalloc((void**)&(d_rIdx), max_spread*sizeof(int));
-    cudaMalloc((void**)&(d_rIdz), max_spread*sizeof(int));
+    cudaMalloc((void**)&(d_rIdx), geometry->nrec*sizeof(int));
+    cudaMalloc((void**)&(d_rIdz), geometry->nrec*sizeof(int));
 
     cudaMalloc((void**)&(d_skw), DGS*DGS*sizeof(float));
     
-    cudaMalloc((void**)&(d_rkwPs), DGS*DGS*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_rkwVx), DGS*DGS*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_rkwVz), DGS*DGS*max_spread*sizeof(float));
+    cudaMalloc((void**)&(d_rkwPs), DGS*DGS*geometry->nrec*sizeof(float));
+    cudaMalloc((void**)&(d_rkwVx), DGS*DGS*geometry->nrec*sizeof(float));
+    cudaMalloc((void**)&(d_rkwVz), DGS*DGS*geometry->nrec*sizeof(float));
 }
 
 void Triclinic::set_snapshots()
@@ -398,15 +341,15 @@ void Triclinic::set_snapshots()
 
 void Triclinic::set_seismogram()
 {
-    sBlocks = (int)((max_spread + NTHREADS - 1) / NTHREADS); 
+    sBlocks = (int)((geometry->nrec + NTHREADS - 1) / NTHREADS); 
 
-    h_seismogram_Ps = new float[nt*max_spread]();
-    h_seismogram_Vx = new float[nt*max_spread]();
-    h_seismogram_Vz = new float[nt*max_spread]();
+    h_seismogram_Ps = new float[nt*geometry->nrec]();
+    h_seismogram_Vx = new float[nt*geometry->nrec]();
+    h_seismogram_Vz = new float[nt*geometry->nrec]();
 
-    cudaMalloc((void**)&(d_seismogram_Ps), nt*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_seismogram_Vx), nt*max_spread*sizeof(float));
-    cudaMalloc((void**)&(d_seismogram_Vz), nt*max_spread*sizeof(float));
+    cudaMalloc((void**)&(d_seismogram_Ps), nt*geometry->nrec*sizeof(float));
+    cudaMalloc((void**)&(d_seismogram_Vx), nt*geometry->nrec*sizeof(float));
+    cudaMalloc((void**)&(d_seismogram_Vz), nt*geometry->nrec*sizeof(float));
 }
 
 void Triclinic::set_wavefields()
@@ -424,7 +367,7 @@ void Triclinic::set_wavefields()
 
 void Triclinic::run_wave_propagation()
 {
-    for (srcId = 0; srcId < geometry->nrel; srcId++)
+    for (srcId = 0; srcId < geometry->nsrc; srcId++)
     {
         get_shot_position();
         
@@ -438,8 +381,8 @@ void Triclinic::run_wave_propagation()
 
 void Triclinic::get_shot_position()
 {
-    sx = geometry->xsrc[geometry->sInd[srcId]];
-    sz = geometry->zsrc[geometry->sInd[srcId]];
+    sx = geometry->xsrc[srcId];
+    sz = geometry->zsrc[srcId];
 
     sIdx = (int)((sx + 0.5f*dx) / dx);
     sIdz = (int)((sz + 0.5f*dz) / dz);
@@ -455,7 +398,7 @@ void Triclinic::show_information()
 
     std::cout << "Model dimensions: (z = " << (nz - 1)*dz << ", x = " << (nx - 1) * dx <<") m\n\n";
 
-    std::cout << "Running shot " << srcId + 1 << " of " << geometry->nrel << " in total\n\n";
+    std::cout << "Running shot " << srcId + 1 << " of " << geometry->nsrc << " in total\n\n";
 
     std::cout << "Current shot position: (z = " << sz << ", x = " << sx << ") m\n\n";
 
@@ -567,7 +510,7 @@ void Triclinic::export_travelTimes()
     {
         cudaMemcpy(snapshot_in, d_T, matsize*sizeof(float), cudaMemcpyDeviceToHost);
         reduce_boundary(snapshot_in, snapshot_out);
-        export_binary_float(snapshot_folder + "triclinic_eikonal_" + std::to_string(nz) + "x" + std::to_string(nx) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin", snapshot_out, nPoints);    
+        export_binary_float(snapshot_folder + "triclinic_eikonal_" + std::to_string(nz) + "x" + std::to_string(nx) + "_shot_" + std::to_string(srcId+1) + ".bin", snapshot_out, nPoints);    
     }
 }
 
@@ -581,7 +524,7 @@ void Triclinic::compute_snapshots()
             {
                 cudaMemcpy(snapshot_in, d_P, matsize*sizeof(float), cudaMemcpyDeviceToHost);
                 reduce_boundary(snapshot_in, snapshot_out);
-                export_binary_float(snapshot_folder + modeling_type + "_snapshot_step" + std::to_string(timeId-tlag) + "_" + std::to_string(nz) + "x" + std::to_string(nx) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin", snapshot_out, nPoints);    
+                export_binary_float(snapshot_folder + modeling_type + "_snapshot_step" + std::to_string(timeId-tlag) + "_" + std::to_string(nz) + "x" + std::to_string(nx) + "_shot_" + std::to_string(srcId+1) + ".bin", snapshot_out, nPoints);    
                 
                 ++snapCount;
             }
@@ -591,9 +534,9 @@ void Triclinic::compute_snapshots()
 
 void Triclinic::compute_seismogram()
 {
-    compute_seismogram_GPU<<<sBlocks,NTHREADS>>>(d_P, d_rIdx, d_rIdz, d_rkwPs, d_seismogram_Ps, max_spread, timeId, tlag, nt, nzz);     
-    compute_seismogram_GPU<<<sBlocks,NTHREADS>>>(d_Vx, d_rIdx, d_rIdz, d_rkwVx, d_seismogram_Vx, max_spread, timeId, tlag, nt, nzz);     
-    compute_seismogram_GPU<<<sBlocks,NTHREADS>>>(d_Vz, d_rIdx, d_rIdz, d_rkwVz, d_seismogram_Vz, max_spread, timeId, tlag, nt, nzz);     
+    compute_seismogram_GPU<<<sBlocks,NTHREADS>>>(d_P, d_rIdx, d_rIdz, d_rkwPs, d_seismogram_Ps, geometry->nrec, timeId, tlag, nt, nzz);     
+    compute_seismogram_GPU<<<sBlocks,NTHREADS>>>(d_Vx, d_rIdx, d_rIdz, d_rkwVx, d_seismogram_Vx, geometry->nrec, timeId, tlag, nt, nzz);     
+    compute_seismogram_GPU<<<sBlocks,NTHREADS>>>(d_Vz, d_rIdx, d_rIdz, d_rkwVz, d_seismogram_Vz, geometry->nrec, timeId, tlag, nt, nzz);     
 }
 
 void Triclinic::show_time_progress()
@@ -613,17 +556,17 @@ void Triclinic::show_time_progress()
 
 void Triclinic::export_seismograms()
 {   
-    cudaMemcpy(h_seismogram_Ps, d_seismogram_Ps, nt*max_spread*sizeof(float), cudaMemcpyDeviceToHost);    
-    cudaMemcpy(h_seismogram_Vx, d_seismogram_Vx, nt*max_spread*sizeof(float), cudaMemcpyDeviceToHost);    
-    cudaMemcpy(h_seismogram_Vz, d_seismogram_Vz, nt*max_spread*sizeof(float), cudaMemcpyDeviceToHost);    
+    cudaMemcpy(h_seismogram_Ps, d_seismogram_Ps, nt*geometry->nrec*sizeof(float), cudaMemcpyDeviceToHost);    
+    cudaMemcpy(h_seismogram_Vx, d_seismogram_Vx, nt*geometry->nrec*sizeof(float), cudaMemcpyDeviceToHost);    
+    cudaMemcpy(h_seismogram_Vz, d_seismogram_Vz, nt*geometry->nrec*sizeof(float), cudaMemcpyDeviceToHost);    
 
-    std::string seismPs = seismogram_folder + modeling_type + "_Ps_nStations" + std::to_string(geometry->spread[srcId]) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
-    std::string seismVx = seismogram_folder + modeling_type + "_Vx_nStations" + std::to_string(geometry->spread[srcId]) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
-    std::string seismVz = seismogram_folder + modeling_type + "_Vz_nStations" + std::to_string(geometry->spread[srcId]) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
+    std::string seismPs = seismogram_folder + modeling_type + "_Ps_nStations" + std::to_string(geometry->nrec) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(srcId+1) + ".bin";
+    std::string seismVx = seismogram_folder + modeling_type + "_Vx_nStations" + std::to_string(geometry->nrec) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(srcId+1) + ".bin";
+    std::string seismVz = seismogram_folder + modeling_type + "_Vz_nStations" + std::to_string(geometry->nrec) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(srcId+1) + ".bin";
 
-    export_binary_float(seismPs, h_seismogram_Ps, nt*max_spread);    
-    export_binary_float(seismVx, h_seismogram_Vx, nt*max_spread);    
-    export_binary_float(seismVz, h_seismogram_Vz, nt*max_spread);    
+    export_binary_float(seismPs, h_seismogram_Ps, nt*geometry->nrec);    
+    export_binary_float(seismVx, h_seismogram_Vx, nt*geometry->nrec);    
+    export_binary_float(seismVz, h_seismogram_Vz, nt*geometry->nrec);    
 }
 
 __global__ void time_set(float * T, int matsize)

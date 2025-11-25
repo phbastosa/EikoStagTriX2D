@@ -16,16 +16,14 @@ void Triclinic_SSG::initialization()
     sIdx += nb; 
     sIdz += nb;
 
-    int * h_rIdx = new int[max_spread]();
-    int * h_rIdz = new int[max_spread]();
+    int * h_rIdx = new int[geometry->nrec]();
+    int * h_rIdz = new int[geometry->nrec]();
 
-    float * h_rkwPs = new float[DGS*DGS*max_spread]();
-    float * h_rkwVx = new float[DGS*DGS*max_spread]();
-    float * h_rkwVz = new float[DGS*DGS*max_spread]();
+    float * h_rkwPs = new float[DGS*DGS*geometry->nrec]();
+    float * h_rkwVx = new float[DGS*DGS*geometry->nrec]();
+    float * h_rkwVz = new float[DGS*DGS*geometry->nrec]();
 
-    int spreadId = 0;
-
-    for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
+    for (recId = 0; recId < geometry->nrec; recId++)
     {
         float rx = geometry->xrec[recId];
         float rz = geometry->zrec[recId];
@@ -41,26 +39,24 @@ void Triclinic_SSG::initialization()
         {
             for (int xId = 0; xId < DGS; xId++)
             {
-                h_rkwPs[zId + xId*DGS + spreadId*DGS*DGS] = rkwPs[zId][xId];
-                h_rkwVx[zId + xId*DGS + spreadId*DGS*DGS] = rkwVx[zId][xId];
-                h_rkwVz[zId + xId*DGS + spreadId*DGS*DGS] = rkwVz[zId][xId];
+                h_rkwPs[zId + xId*DGS + recId*DGS*DGS] = rkwPs[zId][xId];
+                h_rkwVx[zId + xId*DGS + recId*DGS*DGS] = rkwVx[zId][xId];
+                h_rkwVz[zId + xId*DGS + recId*DGS*DGS] = rkwVz[zId][xId];
             }
         }
 
-        h_rIdx[spreadId] = rIdx + nb;
-        h_rIdz[spreadId] = rIdz + nb;
-
-        ++spreadId;
+        h_rIdx[recId] = rIdx + nb;
+        h_rIdz[recId] = rIdz + nb;
     }
 
     cudaMemcpy(d_skw, h_skw, DGS*DGS*sizeof(float), cudaMemcpyHostToDevice);
     
-    cudaMemcpy(d_rkwPs, h_rkwPs, DGS*DGS*max_spread*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_rkwVx, h_rkwVx, DGS*DGS*max_spread*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_rkwVz, h_rkwVz, DGS*DGS*max_spread*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_rkwPs, h_rkwPs, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_rkwVx, h_rkwVx, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_rkwVz, h_rkwVz, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
 
-    cudaMemcpy(d_rIdx, h_rIdx, max_spread*sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_rIdz, h_rIdz, max_spread*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_rIdx, h_rIdx, geometry->nrec*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_rIdz, h_rIdz, geometry->nrec*sizeof(int), cudaMemcpyHostToDevice);
 
     delete[] h_skw;
     delete[] h_rkwPs;

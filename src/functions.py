@@ -18,3 +18,13 @@ def get_analytical_refractions(v, z, x):
             refracted_waves[n,:] += 2.0*z[i]*np.cos(angle) / v[i]
     
     return refracted_waves
+
+def catch_parameter(parameters, target):
+    file = open(parameters, "r")
+    for line in file.readlines():
+        if line[0] != "#":
+            splitted = line.split()
+            if len(splitted) != 0:
+                if splitted[0] == target: 
+                    return splitted[2]     
+                    

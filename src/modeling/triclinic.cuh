@@ -45,7 +45,6 @@ private:
     void set_wavelet();
     void set_dampers();
     void set_eikonal();
-    void set_slowness();
 
     void set_geometry();
     void set_snapshots();
@@ -71,6 +70,9 @@ private:
     
     void get_compression(float * input, uintc * output, int N, float &max_value, float &min_value);
 
+    void set_float_element(std::string element_path, float *&dCij);
+    void set_uintc_element(std::string element_path, uintc *&dCij, float &max, float &min);
+
 protected:
 
     float dx, dz, dt;
@@ -78,8 +80,7 @@ protected:
     int nt, nx, nz, nb, nPoints;
     int sIdx, sIdz, srcId, recId;
     int tlag, nsnap, isnap, fsnap;
-    int max_spread, timeId;
-    int sBlocks, nBlocks;
+    int timeId, sBlocks, nBlocks;
     int total_levels;    
 
     float sx, sz;
