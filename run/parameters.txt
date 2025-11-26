@@ -19,7 +19,6 @@ Cijkl_folder = ../inputs/models/EikoStagTriX2D_
 
 SPS = ../inputs/geometry/EikoStagTriX2D_SPS.txt              
 RPS = ../inputs/geometry/EikoStagTriX2D_RPS.txt     
-XPS = ../inputs/geometry/EikoStagTriX2D_XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
