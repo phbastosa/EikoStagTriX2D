@@ -19,13 +19,8 @@ SPS[:,1] = 0.0
 RPS[:,0] = np.linspace(50, 950, nr)
 RPS[:,1] = 0.0 
 
-XPS[:,0] = np.arange(ns)
-XPS[:,1] = np.zeros(ns) 
-XPS[:,2] = np.zeros(ns) + nr 
-
 np.savetxt("../inputs/geometry/EikoStagTriX2D_SPS.txt", SPS, fmt = "%.2f", delimiter = ",")
 np.savetxt("../inputs/geometry/EikoStagTriX2D_RPS.txt", RPS, fmt = "%.2f", delimiter = ",")
-np.savetxt("../inputs/geometry/EikoStagTriX2D_XPS.txt", XPS, fmt = "%.0f", delimiter = ",")
 
 vp = np.array([1500,1600,1800,2000,2500])
 vs = np.array([   0, 950,1060,1180,1470])
