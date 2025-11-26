@@ -1,36 +1,36 @@
 # include "triclinic_ssg.cuh"
 
-void Triclinic_SSG::initialization()
+void Triclinic_SSG::set_modeling_type()
 {
     modeling_name = "Triclinic media with Standard Staggered Grid";
     modeling_type = "triclinic_ssg";
+}
 
-    float * h_skw = new float[DGS*DGS]();
+void Triclinic_SSG::set_geometry_weights()
+{
+    for (srcId = 0; srcId < geometry->nsrc; srcId++)
+    {
+        sx = geometry->xsrc[srcId];
+        sz = geometry->zsrc[srcId];
 
-    auto skw = kaiser_weights(sx, sz, sIdx, sIdz, dx, dz);
+        sIdx = (int)((sx + 0.5f*dx) / dx);
+        sIdz = (int)((sz + 0.5f*dz) / dz);
 
-    for (int zId = 0; zId < DGS; zId++)
-        for (int xId = 0; xId < DGS; xId++)
-            h_skw[zId + xId*DGS] = skw[zId][xId];
+        auto skw = kaiser_weights(sx, sz, sIdx, sIdz, dx, dz);
 
-    sIdx += nb; 
-    sIdz += nb;
-
-    int * h_rIdx = new int[geometry->nrec]();
-    int * h_rIdz = new int[geometry->nrec]();
-
-    float * h_rkwPs = new float[DGS*DGS*geometry->nrec]();
-    float * h_rkwVx = new float[DGS*DGS*geometry->nrec]();
-    float * h_rkwVz = new float[DGS*DGS*geometry->nrec]();
-
+        for (int zId = 0; zId < DGS; zId++)
+            for (int xId = 0; xId < DGS; xId++)
+                h_skw[zId + xId*DGS + srcId*DGS*DGS] = skw[zId][xId];
+    }
+    
     for (recId = 0; recId < geometry->nrec; recId++)
     {
-        float rx = geometry->xrec[recId];
-        float rz = geometry->zrec[recId];
+        rx = geometry->xrec[recId];
+        rz = geometry->zrec[recId];
         
-        int rIdx = (int)((rx + 0.5f*dx) / dx);
-        int rIdz = (int)((rz + 0.5f*dz) / dz);
-    
+        rIdx = (int)((rx + 0.5f*dx) / dx);
+        rIdz = (int)((rz + 0.5f*dz) / dz);
+        
         auto rkwPs = kaiser_weights(rx, rz, rIdx, rIdz, dx, dz);
         auto rkwVx = kaiser_weights(rx + 0.5f*dx, rz, rIdx, rIdz, dx, dz);
         auto rkwVz = kaiser_weights(rx, rz + 0.5f*dz, rIdx, rIdz, dx, dz);
@@ -44,26 +44,7 @@ void Triclinic_SSG::initialization()
                 h_rkwVz[zId + xId*DGS + recId*DGS*DGS] = rkwVz[zId][xId];
             }
         }
-
-        h_rIdx[recId] = rIdx + nb;
-        h_rIdz[recId] = rIdz + nb;
-    }
-
-    cudaMemcpy(d_skw, h_skw, DGS*DGS*sizeof(float), cudaMemcpyHostToDevice);
-    
-    cudaMemcpy(d_rkwPs, h_rkwPs, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_rkwVx, h_rkwVx, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_rkwVz, h_rkwVz, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
-
-    cudaMemcpy(d_rIdx, h_rIdx, geometry->nrec*sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_rIdz, h_rIdz, geometry->nrec*sizeof(int), cudaMemcpyHostToDevice);
-
-    delete[] h_skw;
-    delete[] h_rkwPs;
-    delete[] h_rkwVx;
-    delete[] h_rkwVz;
-    delete[] h_rIdx;
-    delete[] h_rIdz;
+    }    
 }
 
 void Triclinic_SSG::compute_velocity()
@@ -339,9 +320,9 @@ __global__ void uintc_compute_pressure_ssg(float * Vx, float * Vz, float * Txx, 
             c55_3 = (minC55 + (static_cast<float>(C55[(i+1) + j*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
             c55_4 = (minC55 + (static_cast<float>(C55[i + j*nzz]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
 
-            float c15 = powf(0.25f*(1.0f/c15_1 + 1.0f/c15_2 + 1.0f/c15_3 + 1.0f/c15_4),-1.0f);
-            float c35 = powf(0.25f*(1.0f/c35_1 + 1.0f/c35_2 + 1.0f/c35_3 + 1.0f/c35_4),-1.0f);
-            float c55 = powf(0.25f*(1.0f/c55_1 + 1.0f/c55_2 + 1.0f/c55_3 + 1.0f/c55_4),-1.0f);
+            float c15 = 1.0f / (0.25f*(1.0f/c15_1 + 1.0f/c15_2 + 1.0f/c15_3 + 1.0f/c15_4));
+            float c35 = 1.0f / (0.25f*(1.0f/c35_1 + 1.0f/c35_2 + 1.0f/c35_3 + 1.0f/c35_4));
+            float c55 = 1.0f / (0.25f*(1.0f/c55_1 + 1.0f/c55_2 + 1.0f/c55_3 + 1.0f/c55_4));
 
             Txz[index] += dt*(c15*dVx_dx + c35*dVz_dz + c55*(dVx_dz + dVz_dx));
         }
@@ -426,9 +407,9 @@ __global__ void float_compute_pressure_ssg(float * Vx, float * Vz, float * Txx, 
             float c55_3 = C55[(i+1) + j*nzz];
             float c55_4 = C55[i + j*nzz];
 
-            float c15 = powf(0.25f*(1.0f/c15_1 + 1.0f/c15_2 + 1.0f/c15_3 + 1.0f/c15_4),-1.0f);
-            float c35 = powf(0.25f*(1.0f/c35_1 + 1.0f/c35_2 + 1.0f/c35_3 + 1.0f/c35_4),-1.0f);
-            float c55 = powf(0.25f*(1.0f/c55_1 + 1.0f/c55_2 + 1.0f/c55_3 + 1.0f/c55_4),-1.0f);
+            float c15 = 1.0f / (0.25f*(1.0f/c15_1 + 1.0f/c15_2 + 1.0f/c15_3 + 1.0f/c15_4));
+            float c35 = 1.0f / (0.25f*(1.0f/c35_1 + 1.0f/c35_2 + 1.0f/c35_3 + 1.0f/c35_4));
+            float c55 = 1.0f / (0.25f*(1.0f/c55_1 + 1.0f/c55_2 + 1.0f/c55_3 + 1.0f/c55_4));
 
             Txz[index] += dt*(c15*dVx_dx + c35*dVz_dz + c55*(dVx_dz + dVz_dx));
         }

@@ -51,10 +51,11 @@ private:
     void set_seismogram();
     void set_wavefields();
 
+    void initialization();
     void eikonal_solver();
+    void source_injection();
     void time_propagation();
     void wavefield_refresh();
-    void get_shot_position();
     
     void compute_eikonal();
     void compute_snapshots();
@@ -78,20 +79,28 @@ protected:
     float dx, dz, dt;
     int nxx, nzz, matsize;
     int nt, nx, nz, nb, nPoints;
-    int sIdx, sIdz, srcId, recId;
+    int srcId, sIdx, sIdz; 
+    int recId, rIdx, rIdz;
     int tlag, nsnap, isnap, fsnap;
-    int timeId, sBlocks, nBlocks;
-    int total_levels;    
+    int timeId, nBlocks;
+
+    float bd, fmax; 
 
     float sx, sz;
-    float bd, fmax; 
+    float rx, rz;
     float dx2i, dz2i;
+    int total_levels;    
 
     bool eikonalClip; 
     bool compression;
 
     int * d_sgnv = nullptr;
     int * d_sgnt = nullptr;
+
+    float * h_skw = nullptr;
+    float * h_rkwPs = nullptr;
+    float * h_rkwVx = nullptr;
+    float * h_rkwVz = nullptr;
 
     float * d_skw = nullptr;
     float * d_rkwPs = nullptr;
@@ -135,7 +144,9 @@ protected:
     float * d_C35 = nullptr; uintc * dc_C35 = nullptr; float maxC35; float minC35;
     float * d_C55 = nullptr; uintc * dc_C55 = nullptr; float maxC55; float minC55;
 
-    virtual void initialization() = 0;
+    virtual void set_modeling_type() = 0;
+    virtual void set_geometry_weights() = 0;
+
     virtual void compute_velocity() = 0;
     virtual void compute_pressure() = 0;
 
@@ -164,7 +175,9 @@ __global__ void uintc_quasi_slowness(float * T, float * S, float dx, float dz, i
                                      float minC11, float maxC11, float minC13, float maxC13, float minC15, float maxC15, 
                                      float minC33, float maxC33, float minC35, float maxC35, float minC55, float maxC55);
 
-__global__ void compute_seismogram_GPU(float * P, int * rIdx, int * rIdz, float * rkw, float * seismogram, int spread, int tId, int tlag, int nt, int nzz);
+__global__ void apply_pressure_source(float * Txx, float * Tzz, float * skw, float * wavelet, int sIdx, int sIdz, int tId, int nzz, float dx, float dz);
+
+__global__ void compute_seismogram_GPU(float * WF, float * seismogram, float * rkw, int rIdx, int rIdz, int tId, int tlag, int recId, int nt, int nzz);
 
 __device__ float get_boundary_damper(float * damp1D, float * damp2D, int i, int j, int nxx, int nzz, int nabc);
 

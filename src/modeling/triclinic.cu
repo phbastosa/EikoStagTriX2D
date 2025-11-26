@@ -45,6 +45,8 @@ void Triclinic::set_parameters()
     set_snapshots();
     set_seismogram();
     set_wavefields();
+
+    set_modeling_type();
 }
 
 void Triclinic::set_uintc_element(std::string element_path, uintc *&dCij, float &max, float &min)
@@ -312,14 +314,19 @@ void Triclinic::set_geometry()
     geometry->parameters = parameters;
     geometry->set_parameters();
 
-    cudaMalloc((void**)&(d_rIdx), geometry->nrec*sizeof(int));
-    cudaMalloc((void**)&(d_rIdz), geometry->nrec*sizeof(int));
+    h_skw = new float[DGS*DGS*geometry->nsrc]();
 
+    h_rkwPs = new float[DGS*DGS*geometry->nrec]();
+    h_rkwVx = new float[DGS*DGS*geometry->nrec]();
+    h_rkwVz = new float[DGS*DGS*geometry->nrec]();
+
+    set_geometry_weights();
+    
     cudaMalloc((void**)&(d_skw), DGS*DGS*sizeof(float));
     
-    cudaMalloc((void**)&(d_rkwPs), DGS*DGS*geometry->nrec*sizeof(float));
-    cudaMalloc((void**)&(d_rkwVx), DGS*DGS*geometry->nrec*sizeof(float));
-    cudaMalloc((void**)&(d_rkwVz), DGS*DGS*geometry->nrec*sizeof(float));
+    cudaMalloc((void**)&(d_rkwPs), DGS*DGS*sizeof(float));
+    cudaMalloc((void**)&(d_rkwVx), DGS*DGS*sizeof(float));
+    cudaMalloc((void**)&(d_rkwVz), DGS*DGS*sizeof(float));
 }
 
 void Triclinic::set_snapshots()
@@ -341,8 +348,6 @@ void Triclinic::set_snapshots()
 
 void Triclinic::set_seismogram()
 {
-    sBlocks = (int)((geometry->nrec + NTHREADS - 1) / NTHREADS); 
-
     h_seismogram_Ps = new float[nt*geometry->nrec]();
     h_seismogram_Vx = new float[nt*geometry->nrec]();
     h_seismogram_Vz = new float[nt*geometry->nrec]();
@@ -369,23 +374,33 @@ void Triclinic::run_wave_propagation()
 {
     for (srcId = 0; srcId < geometry->nsrc; srcId++)
     {
-        get_shot_position();
-        
+        initialization();                      
         time_propagation();
-
         show_information();
-        
         export_seismograms();
     }
 }
 
-void Triclinic::get_shot_position()
+void Triclinic::initialization()
 {
     sx = geometry->xsrc[srcId];
     sz = geometry->zsrc[srcId];
 
-    sIdx = (int)((sx + 0.5f*dx) / dx);
-    sIdz = (int)((sz + 0.5f*dz) / dz);
+    sIdx = (int)((sx + 0.5f*dx) / dx) + nb;
+    sIdz = (int)((sz + 0.5f*dz) / dz) + nb;
+
+    cudaMemcpy(d_skw, h_skw + srcId*DGS*DGS, DGS*DGS*sizeof(float), cudaMemcpyHostToDevice);
+
+    compute_eikonal();
+
+    if (snapshot)
+    {
+        snapCount = 0;
+
+        export_travelTimes();
+    }
+
+    wavefield_refresh();
 }
 
 void Triclinic::show_information()
@@ -407,19 +422,9 @@ void Triclinic::show_information()
 
 void Triclinic::time_propagation()
 {
-    initialization();
-    compute_eikonal();
-    wavefield_refresh();
-
-    if (snapshot)
-    {
-        snapCount = 0;
-
-        export_travelTimes();
-    }
-
     for (timeId = 0; timeId < nt + tlag; timeId++)
     {
+        source_injection();
         compute_velocity();
         compute_pressure();
         compute_snapshots();
@@ -502,6 +507,10 @@ void Triclinic::wavefield_refresh()
     cudaMemset(d_Txx, 0.0f, matsize*sizeof(float));
     cudaMemset(d_Tzz, 0.0f, matsize*sizeof(float));
     cudaMemset(d_Txz, 0.0f, matsize*sizeof(float));
+
+    cudaMemset(d_seismogram_Ps, 0.0f, nt*geometry->nrec*sizeof(float));
+    cudaMemset(d_seismogram_Vx, 0.0f, nt*geometry->nrec*sizeof(float));
+    cudaMemset(d_seismogram_Vz, 0.0f, nt*geometry->nrec*sizeof(float));
 }
 
 void Triclinic::export_travelTimes()
@@ -512,6 +521,14 @@ void Triclinic::export_travelTimes()
         reduce_boundary(snapshot_in, snapshot_out);
         export_binary_float(snapshot_folder + "triclinic_eikonal_" + std::to_string(nz) + "x" + std::to_string(nx) + "_shot_" + std::to_string(srcId+1) + ".bin", snapshot_out, nPoints);    
     }
+}
+
+void Triclinic::source_injection()
+{
+    dim3 grid(1,1,1);
+    dim3 block(DGS,DGS,1);
+
+    if (timeId < nt) apply_pressure_source<<<grid,block>>>(d_Txx, d_Tzz, d_skw, d_wavelet, sIdx, sIdz, timeId, nzz, dx, dz);     
 }
 
 void Triclinic::compute_snapshots()
@@ -534,9 +551,28 @@ void Triclinic::compute_snapshots()
 
 void Triclinic::compute_seismogram()
 {
-    compute_seismogram_GPU<<<sBlocks,NTHREADS>>>(d_P, d_rIdx, d_rIdz, d_rkwPs, d_seismogram_Ps, geometry->nrec, timeId, tlag, nt, nzz);     
-    compute_seismogram_GPU<<<sBlocks,NTHREADS>>>(d_Vx, d_rIdx, d_rIdz, d_rkwVx, d_seismogram_Vx, geometry->nrec, timeId, tlag, nt, nzz);     
-    compute_seismogram_GPU<<<sBlocks,NTHREADS>>>(d_Vz, d_rIdx, d_rIdz, d_rkwVz, d_seismogram_Vz, geometry->nrec, timeId, tlag, nt, nzz);     
+    dim3 grid(1,1,1);
+    dim3 block(DGS,DGS,1);
+
+    if (timeId > tlag)
+    {
+        for (recId = 0; recId < geometry->nrec; recId++)
+        {
+            rx = geometry->xrec[recId];
+            rz = geometry->zrec[recId];
+
+            rIdx = (int)((rx + 0.5f*dx) / dx) + nb;
+            rIdz = (int)((rz + 0.5f*dz) / dz) + nb;
+
+            cudaMemcpy(d_rkwPs, h_rkwPs + recId*DGS*DGS, DGS*DGS*sizeof(float), cudaMemcpyHostToDevice);
+            cudaMemcpy(d_rkwVx, h_rkwVx + recId*DGS*DGS, DGS*DGS*sizeof(float), cudaMemcpyHostToDevice);
+            cudaMemcpy(d_rkwVz, h_rkwVz + recId*DGS*DGS, DGS*DGS*sizeof(float), cudaMemcpyHostToDevice);
+
+            compute_seismogram_GPU<<<grid,block>>>(d_P, d_seismogram_Ps, d_rkwPs, rIdx, rIdz, timeId, tlag, recId, nt, nzz);     
+            compute_seismogram_GPU<<<grid,block>>>(d_Vx, d_seismogram_Vx, d_rkwVx, rIdx, rIdz, timeId, tlag, recId, nt, nzz);     
+            compute_seismogram_GPU<<<grid,block>>>(d_Vz, d_seismogram_Vz, d_rkwVz, rIdx, rIdz, timeId, tlag, recId, nt, nzz);     
+        }
+    }
 }
 
 void Triclinic::show_time_progress()
@@ -763,26 +799,35 @@ __global__ void uintc_quasi_slowness(float * T, float * S, float dx, float dz, i
     }
 }
 
-__global__ void compute_seismogram_GPU(float * WF, int * rIdx, int * rIdz, float * rkw, float * seismogram, int spread, int tId, int tlag, int nt, int nzz)
+__global__ void apply_pressure_source(float * Txx, float * Tzz, float * skw, float * wavelet, int sIdx, int sIdz, int tId, int nzz, float dx, float dz)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    int j = threadIdx.y + blockIdx.y * blockDim.y;
 
-    if ((index < spread) && (tId > tlag))
-    {   
-        seismogram[(tId - tlag) + index*nt] = 0.0f;    
-                
-        for (int i = 0; i < DGS; i++)
-        {
-            int zi = rIdz[index] + i - 3;
+    int zi = sIdz + (i - 3);
+    int xi = sIdx + (j - 3);
 
-            for (int j = 0; j < DGS; j++)
-            {
-                int xi = rIdx[index] + j - 3;
+    int index = zi + xi*nzz;
+        
+    Txx[index] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);
+    Tzz[index] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);           
+}
 
-                seismogram[(tId - tlag) + index*nt] += rkw[i + j*DGS + index*DGS*DGS]*WF[zi + xi*nzz];
-            }
-        }
-    }    
+__global__ void compute_seismogram_GPU(float * WF, float * seismogram, float * rkw, int rIdx, int rIdz, int tId, int tlag, int recId, int nt, int nzz)
+{
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    int j = threadIdx.y + blockIdx.y * blockDim.y;
+
+    int zi = rIdz + (i - 3);
+    int xi = rIdx + (j - 3);
+
+    int index = zi + xi*nzz;
+
+    // idk why it's not working
+    //seismogram[(tId - tlag) + recId*nt] += rkw[i + j*DGS]*WF[index];
+
+    if ((i == 4) && (j == 4))    
+        seismogram[(tId - tlag) + recId*nt] = WF[index];
 }
 
 __device__ float get_boundary_damper(float * d1D, float * d2D, int i, int j, int nxx, int nzz, int nb)

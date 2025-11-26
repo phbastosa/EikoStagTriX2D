@@ -1,22 +1,22 @@
 import numpy as np
 
-nx = 401
-nz = 81
+nx = 101
+nz = 51
 
-dx = 12.5
-dz = 12.5
+dx = 10.0
+dz = 10.0
 
-ns = 13
-nr = 200
+ns = 2
+nr = 91
 
 SPS = np.zeros((ns, 2))
 RPS = np.zeros((nr, 2))
 XPS = np.zeros((ns, 3))
 
-SPS[:,0] = np.linspace(1000, 4000, ns)
+SPS[:,0] = np.linspace(300, 700, ns)
 SPS[:,1] = 0.0 
 
-RPS[:,0] = np.linspace(12.5, 4987.5, nr)
+RPS[:,0] = np.linspace(50, 950, nr)
 RPS[:,1] = 0.0 
 
 XPS[:,0] = np.arange(ns)
@@ -27,15 +27,15 @@ np.savetxt("../inputs/geometry/EikoStagTriX2D_SPS.txt", SPS, fmt = "%.2f", delim
 np.savetxt("../inputs/geometry/EikoStagTriX2D_RPS.txt", RPS, fmt = "%.2f", delimiter = ",")
 np.savetxt("../inputs/geometry/EikoStagTriX2D_XPS.txt", XPS, fmt = "%.0f", delimiter = ",")
 
-vp = np.array([1500,1600,1800,2000])
-vs = np.array([   0, 950,1060,1180])
-ro = np.array([1000,2350,2400,2450])
-z = np.array([375, 250, 250])
+vp = np.array([1500,1600,1800,2000,2500])
+vs = np.array([   0, 950,1060,1180,1470])
+ro = np.array([1000,2350,2400,2450,2500])
+z = np.array([200, 50, 100, 100])
 
-E = np.array([0.0, 0.0, 0.0, 0.0])
-D = np.array([0.0, 0.0, 0.0, 0.0])
+E = np.array([0.0, 0.07, 0.08, 0.10, 0.0])
+D = np.array([0.0, 0.03, 0.05, 0.06, 0.0])
 
-tilt = np.array([0, 0, 0, 0]) * np.pi/180.0
+tilt = np.array([0, 10, 15, 20, 0]) * np.pi/180.0
 
 S = np.zeros((nz, nx))
 B = np.zeros((nz, nx))

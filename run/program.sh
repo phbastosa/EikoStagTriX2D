@@ -29,15 +29,7 @@ USER_MESSAGE="
 \nUsage:
     
     $ $0 -compile                  # To build ../bin/modeling.exe     
-    $ $0 -modeling                 # To execute the program             
-
-Tests:
-
-    $ $0 -test_compression         # Stiffness compression to check memory usage
-    $ $0 -test_performance         # Eikonal clipping test to check performance
-    $ $0 -test_isotropic_media     # Comparison test in isotropic homogeneous media
-    $ $0 -test_anisotropic_media   # Comparison test in anisotropic homogeneous media             
-    
+    $ $0 -modeling                 # To execute the program                 
 -------------------------------------------------------------------------------
 "
 
