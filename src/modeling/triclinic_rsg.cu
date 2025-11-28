@@ -42,6 +42,7 @@ void Triclinic_RSG::set_rec_weights()
     }
 
     cudaMemcpy(d_rkwPs, h_rkwPs, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
+    //cudaMemcpy(d_rkwVx, h_rkwVx, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
     //cudaMemcpy(d_rkwVz, h_rkwVz, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
 
     cudaMemcpy(d_rIdx, h_rIdx, geometry->nrec*sizeof(int), cudaMemcpyHostToDevice);
