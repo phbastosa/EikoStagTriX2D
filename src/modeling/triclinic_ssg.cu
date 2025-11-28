@@ -6,45 +6,67 @@ void Triclinic_SSG::set_modeling_type()
     modeling_type = "triclinic_ssg";
 }
 
-void Triclinic_SSG::set_geometry_weights()
+void Triclinic_SSG::set_rec_weights()
 {
-    for (srcId = 0; srcId < geometry->nsrc; srcId++)
-    {
-        sx = geometry->xsrc[srcId];
-        sz = geometry->zsrc[srcId];
+    int * h_rIdx = new int[geometry->nrec]();
+    int * h_rIdz = new int[geometry->nrec]();
 
-        sIdx = (int)((sx + 0.5f*dx) / dx);
-        sIdz = (int)((sz + 0.5f*dz) / dz);
+    float * h_rkwPs = new float[DGS*DGS*geometry->nrec]();
+    //float * h_rkwVx = new float[DGS*DGS*geometry->nrec]();
+    //float * h_rkwVz = new float[DGS*DGS*geometry->nrec]();
 
-        auto skw = kaiser_weights(sx, sz, sIdx, sIdz, dx, dz);
-
-        for (int zId = 0; zId < DGS; zId++)
-            for (int xId = 0; xId < DGS; xId++)
-                h_skw[zId + xId*DGS + srcId*DGS*DGS] = skw[zId][xId];
-    }
-    
     for (recId = 0; recId < geometry->nrec; recId++)
     {
-        rx = geometry->xrec[recId];
-        rz = geometry->zrec[recId];
+        float rx = geometry->xrec[recId];
+        float rz = geometry->zrec[recId];
         
-        rIdx = (int)((rx + 0.5f*dx) / dx);
-        rIdz = (int)((rz + 0.5f*dz) / dz);
-        
+        int rIdx = (int)((rx + 0.5f*dx) / dx);
+        int rIdz = (int)((rz + 0.5f*dz) / dz);
+    
         auto rkwPs = kaiser_weights(rx, rz, rIdx, rIdz, dx, dz);
-        auto rkwVx = kaiser_weights(rx + 0.5f*dx, rz, rIdx, rIdz, dx, dz);
-        auto rkwVz = kaiser_weights(rx, rz + 0.5f*dz, rIdx, rIdz, dx, dz);
+        //auto rkwVx = kaiser_weights(rx + 0.5f*dx, rz, rIdx, rIdz, dx, dz);
+        //auto rkwVz = kaiser_weights(rx, rz + 0.5f*dz, rIdx, rIdz, dx, dz);
         
         for (int zId = 0; zId < DGS; zId++)
         {
             for (int xId = 0; xId < DGS; xId++)
             {
                 h_rkwPs[zId + xId*DGS + recId*DGS*DGS] = rkwPs[zId][xId];
-                h_rkwVx[zId + xId*DGS + recId*DGS*DGS] = rkwVx[zId][xId];
-                h_rkwVz[zId + xId*DGS + recId*DGS*DGS] = rkwVz[zId][xId];
+                //h_rkwVx[zId + xId*DGS + recId*DGS*DGS] = rkwVx[zId][xId];
+                //h_rkwVz[zId + xId*DGS + recId*DGS*DGS] = rkwVz[zId][xId];
             }
         }
-    }    
+
+        h_rIdx[recId] = rIdx + nb;
+        h_rIdz[recId] = rIdz + nb;
+    }
+
+    cudaMemcpy(d_rkwPs, h_rkwPs, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
+    //cudaMemcpy(d_rkwVz, h_rkwVz, DGS*DGS*geometry->nrec*sizeof(float), cudaMemcpyHostToDevice);
+
+    cudaMemcpy(d_rIdx, h_rIdx, geometry->nrec*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_rIdz, h_rIdz, geometry->nrec*sizeof(int), cudaMemcpyHostToDevice);
+
+    delete[] h_rkwPs;
+    //delete[] h_rkwVx;
+    //delete[] h_rkwVz;
+    delete[] h_rIdx;
+    delete[] h_rIdz;
+}
+
+void Triclinic_SSG::set_src_weights()
+{
+    float * h_skw = new float[DGS*DGS]();
+
+    auto skw = kaiser_weights(sx, sz, sIdx, sIdz, dx, dz);
+
+    for (int xId = 0; xId < DGS; xId++)
+        for (int zId = 0; zId < DGS; zId++)
+            h_skw[zId + xId*DGS] = skw[zId][xId];
+
+    cudaMemcpy(d_skw, h_skw, DGS*DGS*sizeof(float), cudaMemcpyHostToDevice);
+    
+    delete[] h_skw;
 }
 
 void Triclinic_SSG::compute_velocity()

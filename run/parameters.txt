@@ -2,11 +2,11 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 101                           # <int>  
-z_samples = 51                            # <int>  
+x_samples = 201                           # <int>  
+z_samples = 81                            # <int>  
 
-x_spacing = 10.0                          # [m] <float> 
-z_spacing = 10.0                          # [m] <float> 
+x_spacing = 25.0                          # [m] <float> 
+z_spacing = 25.0                          # [m] <float> 
 
 slowness_file = ../inputs/models/EikoStagTriX2D_slowness.bin
 buoyancy_file = ../inputs/models/EikoStagTriX2D_buoyancy.bin
@@ -32,17 +32,17 @@ modeling_type = 1
 compression = true
 eikonalClip = true
 
-time_samples = 1001
+time_samples = 3001
 time_spacing = 1e-3
-max_frequency = 30.0
+max_frequency = 15.0
 
 boundary_samples = 50
 boundary_damping = 0.0045
 
-snapshot = true
-beg_snap = 200
-end_snap = 400
-num_snap = 2
+snapshot = false
+beg_snap = 1000
+end_snap = 1000
+num_snap = 1
 
 snapshot_folder = ../outputs/snapshots/
 seismogram_folder = ../outputs/seismograms/

@@ -51,11 +51,11 @@ private:
     void set_seismogram();
     void set_wavefields();
 
-    void initialization();
     void eikonal_solver();
     void source_injection();
     void time_propagation();
     void wavefield_refresh();
+    void get_shot_position();
     
     void compute_eikonal();
     void compute_snapshots();
@@ -71,9 +71,6 @@ private:
     
     void get_compression(float * input, uintc * output, int N, float &max_value, float &min_value);
 
-    void set_float_element(std::string element_path, float *&dCij);
-    void set_uintc_element(std::string element_path, uintc *&dCij, float &max, float &min);
-
 protected:
 
     float dx, dz, dt;
@@ -82,7 +79,7 @@ protected:
     int srcId, sIdx, sIdz; 
     int recId, rIdx, rIdz;
     int tlag, nsnap, isnap, fsnap;
-    int timeId, nBlocks;
+    int timeId, nBlocks, sBlocks;
 
     float bd, fmax; 
 
@@ -144,8 +141,10 @@ protected:
     float * d_C35 = nullptr; uintc * dc_C35 = nullptr; float maxC35; float minC35;
     float * d_C55 = nullptr; uintc * dc_C55 = nullptr; float maxC55; float minC55;
 
+    virtual void set_rec_weights() = 0;
+    virtual void set_src_weights() = 0;
+
     virtual void set_modeling_type() = 0;
-    virtual void set_geometry_weights() = 0;
 
     virtual void compute_velocity() = 0;
     virtual void compute_pressure() = 0;
@@ -177,7 +176,7 @@ __global__ void uintc_quasi_slowness(float * T, float * S, float dx, float dz, i
 
 __global__ void apply_pressure_source(float * Txx, float * Tzz, float * skw, float * wavelet, int sIdx, int sIdz, int tId, int nzz, float dx, float dz);
 
-__global__ void compute_seismogram_GPU(float * WF, float * seismogram, float * rkw, int rIdx, int rIdz, int tId, int tlag, int recId, int nt, int nzz);
+__global__ void compute_seismogram_GPU(float * WF, int * rIdx, int * rIdz, float * rkw, float * seismogram, int spread, int tId, int tlag, int nt, int nzz);
 
 __device__ float get_boundary_damper(float * damp1D, float * damp2D, int i, int j, int nxx, int nzz, int nabc);
 
