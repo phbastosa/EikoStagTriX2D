@@ -406,7 +406,7 @@ void Triclinic::set_wavefields()
 
 void Triclinic::run_wave_propagation()
 {
-    for (srcId = 0; srcId < geometry->nsrc; srcId++)
+    for (srcId = 0; srcId < geometry->nsrc; srcId++)  
     {
         get_shot_position();                      
         time_propagation();

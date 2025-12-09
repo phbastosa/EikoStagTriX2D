@@ -1,36 +1,36 @@
 import numpy as np
 
-nx = 201
-nz = 81
+nx = 1001
+nz = 1001
 
-dx = 25.0
-dz = 25.0
+dx = 10.0
+dz = 10.0
 
 ns = 1
-nr = 201
+nr = 1001
 
 SPS = np.zeros((ns, 2))
 RPS = np.zeros((nr, 2))
 XPS = np.zeros((ns, 3))
 
-SPS[:,0] = np.linspace(1000, 4000, ns)
-SPS[:,1] = 0.0 
+SPS[:,0] = np.linspace(5000, 5000, ns)
+SPS[:,1] = 5000.0 
 
-RPS[:,0] = np.linspace(0, 5000, nr)
+RPS[:,0] = np.linspace(0, 10000, nr)
 RPS[:,1] = 0.0 
 
 np.savetxt("../inputs/geometry/EikoStagTriX2D_SPS.txt", SPS, fmt = "%.2f", delimiter = ",")
 np.savetxt("../inputs/geometry/EikoStagTriX2D_RPS.txt", RPS, fmt = "%.2f", delimiter = ",")
 
-vp = np.array([1500,1600,1800,2000])
-vs = np.array([   0, 950,1060,1180])
-ro = np.array([1000,2350,2400,2450])
-z = np.array([750, 500, 500])
+vp = np.array([2000])
+vs = np.array([1180])
+ro = np.array([2500])
+z = np.array([])
 
-E = np.array([0.0, 0.0, 0.10, 0.0])
-D = np.array([0.0, 0.0, 0.05, 0.0])
+E = np.array([0.2])
+D = np.array([0.1])
 
-tilt = np.array([0, 0, 30, 0]) * np.pi/180.0
+tilt = np.array([30]) * np.pi/180.0
 
 S = np.zeros((nz, nx))
 B = np.zeros((nz, nx))
@@ -93,3 +93,24 @@ C15.flatten("F").astype(np.float32, order = "F").tofile("../inputs/models/EikoSt
 C33.flatten("F").astype(np.float32, order = "F").tofile("../inputs/models/EikoStagTriX2D_C33.bin")
 C35.flatten("F").astype(np.float32, order = "F").tofile("../inputs/models/EikoStagTriX2D_C35.bin")
 C55.flatten("F").astype(np.float32, order = "F").tofile("../inputs/models/EikoStagTriX2D_C55.bin")
+
+import matplotlib.pyplot as plt
+
+Vp = 1.0 / S
+
+fig, ax = plt.subplots(figsize = (6,5))
+
+im = ax.imshow(Vp, aspect = "auto", cmap = "jet", extent = [0, (nx-1)*dx, (nz-1)*dz, 0])
+cbar = plt.colorbar(im, ax = ax, pad = 0.02)
+cbar.set_label("P wave velocity [m/s]", fontsize = 15)
+
+ax.plot(RPS[:,0], RPS[:,1], "og")
+ax.plot(SPS[:,0], SPS[:,1], "ok")
+
+ax.set_ylabel("Depth [m]", fontsize = 15)
+ax.set_xlabel("Distance [m]", fontsize = 15)
+
+fig.tight_layout()
+plt.show()
+
+

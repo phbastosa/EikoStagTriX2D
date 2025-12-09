@@ -109,21 +109,6 @@ __global__ void uintc_compute_velocity_rsg(float * Vx, float * Vz, float * Txx, 
     int i = (int)(index % nzz);
     int j = (int)(index / nzz);
 
-    if ((index == 0) && (tId < nt))
-    {
-        for (int i = 0; i < DGS; i++)
-        {
-            int zi = sIdz + i - 3;
-            for (int j = 0; j < DGS; j++)
-            {
-                int xi = sIdx + j - 3;
-
-                Txx[zi + xi*nzz] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);
-                Tzz[zi + xi*nzz] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);
-            }
-        }
-    }
-
     float d1_Txx = 0.0f; float d2_Txx = 0.0f;
     float d1_Tzz = 0.0f; float d2_Tzz = 0.0f;
     float d1_Txz = 0.0f; float d2_Txz = 0.0f;
@@ -184,21 +169,6 @@ __global__ void float_compute_velocity_rsg(float * Vx, float * Vz, float * Txx, 
 
     int i = (int)(index % nzz);
     int j = (int)(index / nzz);
-
-    if ((index == 0) && (tId < nt))
-    {
-        for (int i = 0; i < DGS; i++)
-        {
-            int zi = sIdz + i - 3;
-            for (int j = 0; j < DGS; j++)
-            {
-                int xi = sIdx + j - 3;
-
-                Txx[zi + xi*nzz] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);
-                Tzz[zi + xi*nzz] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);
-            }
-        }
-    }
 
     float d1_Txx = 0.0f; float d2_Txx = 0.0f;
     float d1_Tzz = 0.0f; float d2_Tzz = 0.0f;

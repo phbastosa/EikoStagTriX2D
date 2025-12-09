@@ -108,21 +108,6 @@ __global__ void uintc_compute_velocity_ssg(float * Vx, float * Vz, float * Txx, 
     int j = (int)(index / nzz);
 
     float Bn, Bm;
-
-    if ((index == 0) && (tId < nt))
-    {
-        for (int i = 0; i < DGS; i++)
-        {
-            int zi = sIdz + i - 3;
-            for (int j = 0; j < DGS; j++)
-            {
-                int xi = sIdx + j - 3;
-
-                Txx[zi + xi*nzz] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);
-                Tzz[zi + xi*nzz] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);
-            }
-        }
-    }
     
     T[index] = (eikonal) ? T[index] : 0.0f;
 
@@ -187,21 +172,6 @@ __global__ void float_compute_velocity_ssg(float * Vx, float * Vz, float * Txx, 
 
     int i = (int)(index % nzz);
     int j = (int)(index / nzz);
-
-    if ((index == 0) && (tId < nt))
-    {
-        for (int i = 0; i < DGS; i++)
-        {
-            int zi = sIdz + i - 3;
-            for (int j = 0; j < DGS; j++)
-            {
-                int xi = sIdx + j - 3;
-
-                Txx[zi + xi*nzz] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);
-                Tzz[zi + xi*nzz] += skw[i + j*DGS]*wavelet[tId] / (dx*dz);
-            }
-        }
-    }
     
     T[index] = (eikonal) ? T[index] : 0.0f;
 
